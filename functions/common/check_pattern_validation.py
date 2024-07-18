@@ -31,10 +31,6 @@ def is_table_name_present(query):
             return True
     return False
 
-def is_valid_join_table_name(word):
-    table_name_pattern = re.compile(r"^[a-zA-Z_][\w]*$")
-    return bool(table_name_pattern.match(word))
-
 def validate_sql_pattern(query):
     # Check for exactly one occurrence of SELECT/select (case-insensitive)
     select_pattern = re.compile(r'\bselect\b', re.IGNORECASE)

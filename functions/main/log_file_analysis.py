@@ -110,8 +110,10 @@ def extract_table_names(section_content, folder_path, view_tables = []):
                     full_remove_str = ' '.join(split_strings[:-1]) + '.'
                     full_temp_name = sp_name.replace(full_remove_str , '')
                     split_table_name[index] = full_temp_name
-                     
-                logger = setup_logger(table_folder_path,write_table_name.lower() )
+
+                result_file_path = os.path.join(table_folder_path, f"{write_table_name.lower()}.txt")
+                if not os.path.exists(result_file_path):
+                    logger = setup_logger(table_folder_path,write_table_name.lower() )
     
     if match_column:
         split_name = ''
@@ -245,9 +247,9 @@ def format_replace(col):
     col = col.replace("yyyy/mm/dd", "")
     col = col.replace("\n", "")
     col = col.replace(";", "")
-    col = col.replace(",", "")
+    col = col.upper().replace("COLLATE Japanese_CS_AS_KS_WS", "")
 
-    return col.strip()
+    return col.strip().lower()
 
 def analysis_for_view_files():
     files_dir1 = os.listdir(rootTempDir)
@@ -302,7 +304,10 @@ def create_file_and_append_coumns_for_views():
             folder_path = tableListDir
             table_name = key
 
-        logger = setup_logger(folder_path,table_name)
+        result_file_path = os.path.join(folder_path, f"{table_name.lower()}.txt")
+        if not os.path.exists(result_file_path):
+            logger = setup_logger(folder_path,table_name)
+
         target_log = f"{key}.txt".lower()
 
         column_append(tableListDir, value, target_log ,view_tables = [])      

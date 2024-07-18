@@ -18,7 +18,6 @@ if not os.path.exists(folder_path):
 today_date = datetime.today().strftime('%Y_%m_%d_%H_%M_%S')
 # Set up logging
 log_file = os.path.join(folder_path, f"query_analysis_for_view_{today_date}.log")
-require_log_file = os.path.join(folder_path, f"require_query_for_view_{today_date}.log")
 
 # Configure the logger for query_analysis.log
 query_analysis_logger = logging.getLogger('query_analysis_logger_view')
@@ -28,11 +27,6 @@ query_analysis_handler.setFormatter(logging.Formatter('%(message)s'))
 query_analysis_logger.addHandler(query_analysis_handler)
 
 # Configure a separate logger for require_files_query_analysis.log
-require_logger = logging.getLogger('require_files_logger_view')
-require_logger.setLevel(logging.INFO)
-require_handler = logging.FileHandler(require_log_file, mode='w', encoding='utf-8')
-require_handler.setFormatter(logging.Formatter('%(message)s'))
-require_logger.addHandler(require_handler)
 
 config = configparser.ConfigParser()
 config.read('config.ini', encoding='utf-8')
@@ -108,14 +102,6 @@ def process_file(file_path):
                         elif query_pattern == 'subquery select':
                             column_map = fnc.extract_table_column_names_with_sub_pat(sql_query)
 
-                        elif query_pattern == 'Not sql exists':
-                            if len(file_path_list) == 0:
-                                require_logger.info(file_path)
-                                file_path_list.append(file_path)
-
-                            if file_path not in file_path_list:
-                                file_path_list = []
-                            require_logger.info(sql_query + "\n")
 
                         for table, columns in column_map.items():
                             if 'join' in columns:
@@ -162,5 +148,4 @@ if __name__ == "__main__":
     fnc.delete_folder(current_root)
     main()
 
-    # delete temp folder after all process finished
-    fnc.force_delete_directory(rootTempDir, file_process_error_log_path)
+    # delete temp folder after all process finishe

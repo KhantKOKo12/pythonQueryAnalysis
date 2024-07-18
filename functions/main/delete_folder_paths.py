@@ -4,7 +4,6 @@ import os
 def delete_folder(folder_path):
     folders_to_delete = [
     'table_list',
-    'temp',
     'view_table_list',
     'excel'
  ]

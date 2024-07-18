@@ -152,7 +152,6 @@ def replace_as_for_table_name(table_name):
         table_name = table_name.replace(' ', ' AS ')
     return table_name
 
-
 def extract_table_column_names(sql_query):
     distinct_regex = re.compile(r'\bDISTINCT\b', re.IGNORECASE)
     sql_query = distinct_regex.sub('', sql_query)
@@ -167,6 +166,10 @@ def extract_table_column_names(sql_query):
     
     join_table_name_regex = re.compile(r'(JOIN)\s+(.+?)\s+(ON|$)', re.IGNORECASE)
     select_table_name = extract_table_and_alias(sql_query)
+    split_table_alais = select_table_name.upper().split(' AS')
+    table_alais = ''
+    if len(split_table_alais) == 2:
+        table_alais = split_table_alais[1]
 
     # vaildation_for_view_table(select_table_name, view_tables)  
     join_table_names = join_table_name_regex.findall(sql_query)
@@ -294,16 +297,25 @@ def extract_table_column_names(sql_query):
 
                     if col_results:
                         col_result = col_results.group(1).replace(')', '')
+
+                        if table_alais != "":
+                            col_result = check_alais_and_append_alais(table_alais, col_result)
                         column_map[select_table_name]['order'].append(col_result.strip())
                     else:
                         col = col.replace(')', '')
                         col = col.replace('\n', '')
                         col = col.replace(',', '')
+
+                        if table_alais != "":
+                            col = check_alais_and_append_alais(table_alais, col)
                         column_map[select_table_name]['order'].append(col.strip())
             else:
                 column = column[0].replace(')', '')
                 column = column.replace('\n', '')
                 column = column.replace(',', '')
+
+                if table_alais != "":
+                    column = check_alais_and_append_alais(table_alais, column)
                 column_map[select_table_name]['order'].append(column.strip())        
       
     if contains_select_all(sql_query):           
@@ -312,10 +324,20 @@ def extract_table_column_names(sql_query):
                 column = column.replace(')', '')
                 column = column.strip().replace(' ', '').replace('\n', '').replace('\t', '')
                 column = column.replace('havingcount*>1', '')
+
+                if table_alais != "":
+                    column = check_alais_and_append_alais(table_alais, column)
                 column_map[select_table_name]['group'].append(column)
                 
     column_map = ensure_unique_values(column_map)
     return column_map
+
+def check_alais_and_append_alais(table_alais, column):
+    check_alais = column.split('.')
+
+    if len(check_alais) == 1 and not column.isdigit() and column != "" and column.lower() != "int" and column.lower() != "varchar":
+        column = table_alais + "." + column
+    return column 
 
 def split_columns(select_clause):
     columns = []
@@ -517,37 +539,31 @@ def generate_sql_fragments(sql):
             sql = sql.replace(subquery_str, '')
     return sql_fragments
 
-
 def remove_invalid_joins(query):
+    # Define patterns to match joins that have no table name
     join_patterns = [
-        # LEFT JOIN
-        r"LEFT\s+JOIN\s+(\w+)?(\s+AS\s+\w+)?\s*ON\s*\(([\s\S]*?)\)",
-        # LEFT OUTER JOIN
-        r"LEFT\s+OUTER\s+JOIN\s+(\w+)?(\s+AS\s+\w+)?\s*ON\s*\(([\s\S]*?)\)",
-        # INNER JOIN
-        r"INNER\s+JOIN\s+(\w+)?(\s+AS\s+\w+)?\s*ON\s*\(([\s\S]*?)\)",
-        # RIGHT JOIN
-        r"RIGHT\s+JOIN\s+(\w+)?(\s+AS\s+\w+)?\s*ON\s*\(([\s\S]*?)\)",
-        # RIGHT OUTER JOIN
-        r"RIGHT\s+OUTER\s+JOIN\s+(\w+)?(\s+AS\s+\w+)?\s*ON\s*\(([\s\S]*?)\)",
-        # OUTER JOIN
-        r"OUTER\s+JOIN\s+(\w+)?(\s+AS\s+\w+)?\s*ON\s*\(([\s\S]*?)\)",
-        # CROSS JOIN
-        r"CROSS\s+JOIN\s+(\w+)?(\s+AS\s+\w+)?",
+        # Matches INNER JOIN without a table name
+        r"INNER\s+JOIN\s+AS\s+\w+\s*ON\s*\([\s\S]*?\)",
+        # Matches LEFT JOIN without a table name
+        r"LEFT\s+JOIN\s+AS\s+\w+\s*ON\s*\([\s\S]*?\)",
+        # Matches LEFT OUTER JOIN without a table name
+        r"LEFT\s+OUTER\s+JOIN\s+AS\s+\w+\s*ON\s*\([\s\S]*?\)",
+        # Matches RIGHT JOIN without a table name
+        r"RIGHT\s+JOIN\s+AS\s+\w+\s*ON\s*\([\s\S]*?\)",
+        # Matches RIGHT OUTER JOIN without a table name
+        r"RIGHT\s+OUTER\s+JOIN\s+AS\s+\w+\s*ON\s*\([\s\S]*?\)",
+        # Matches OUTER JOIN without a table name
+        r"OUTER\s+JOIN\s+AS\s+\w+\s*ON\s*\([\s\S]*?\)",
+        # Matches CROSS JOIN without a table name
+        r"CROSS\s+JOIN\s+AS\s+\w+",
     ]
 
     # Compile the join patterns with case insensitivity
     join_regex = re.compile("|".join(join_patterns), re.IGNORECASE)
-    
-    sql_query = join_regex.sub(validate_and_keep, query)
-    
-    return sql_query
+    # Remove the invalid join patterns from the query
+    sql_query = re.sub(join_regex, '', query)
 
-def validate_and_keep(match):
-    table_name = match.group(1)
-    if table_name and fnc.is_valid_join_table_name(table_name):
-        return match.group(0)  # Keep the valid JOIN clause
-    return ""  # Remove the invalid JOIN clause
+    return sql_query
 
 def extract_table_column_names_with_sub_pat(sql_query):
     column_map = {}

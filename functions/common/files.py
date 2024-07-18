@@ -16,13 +16,18 @@ def read_file_to_array(file_path):
        
     return lines
 
-def force_delete_directory(folder_path, file_process_error_log_path):
+def delete_folder(folder_path):
+    folders_to_delete = [
+    'table_list',
+    'view_table_list',
+    'excel'
+ ]
     try:
-        if os.path.exists(folder_path):
-            shutil.rmtree(folder_path)
-            print(f"Successfully deleted folder: {folder_path}")
-        else:
-            print(f"Folder does not exist: {folder_path}")
+        for folder in folders_to_delete:
+            full_path = os.path.join(folder_path, folder)
+            if os.path.exists(full_path):
+                shutil.rmtree(full_path)
+                print(f"Successfully deleted folder: {full_path}")
+
     except Exception as e:
-        with file_process_error_log_path.open('a', encoding='utf-8') as error_log:
-            error_log.write(f'{current_time} - Error in log_file_analysis.py/force_delete_directory function: {e}\n')    
+        print(f"Error deleting folder {full_path}: {e}")
