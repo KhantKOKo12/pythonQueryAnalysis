@@ -7,6 +7,6 @@ rem Run the first Python script
 .\embed\python main.py
 
 rem Run the second Python script
-.\embed\python delete_folder_paths.py
+.\embed\python delete_temp_folder.py
 
 pause
