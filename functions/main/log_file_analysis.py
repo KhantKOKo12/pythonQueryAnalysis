@@ -247,7 +247,7 @@ def format_replace(col):
     col = col.replace("yyyy/mm/dd", "")
     col = col.replace("\n", "")
     col = col.replace(";", "")
-    col = col.upper().replace("COLLATE Japanese_CS_AS_KS_WS", "")
+    col = col.lower().replace("collate japanese_cs_as_ks_ws", "")
 
     return col.strip().lower()
 
