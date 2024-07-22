@@ -152,7 +152,7 @@ def replace_as_for_table_name(table_name):
         table_name = table_name.replace(' ', ' AS ')
     return table_name
 
-def extract_table_column_names(sql_query):
+def extract_table_column_names(sql_query, query_pattern):
     distinct_regex = re.compile(r'\bDISTINCT\b', re.IGNORECASE)
     sql_query = distinct_regex.sub('', sql_query)
     parsed_query = sqlparse.parse(sql_query)[0]
@@ -207,11 +207,12 @@ def extract_table_column_names(sql_query):
 
         if select_clause:
             select_column = split_columns(select_clause[0])
-
+         
             if select_column:
                 for col_match in select_column:
-                
                     column = anlaysis_select_clause_column_conditions(col_match)
+                    if query_pattern == 'simple select':
+                        column = check_alais_and_append_alais (table_alais ,column)
                     column_map[select_table_name]['select'].append(column)   
 
 
@@ -334,9 +335,11 @@ def extract_table_column_names(sql_query):
 
 def check_alais_and_append_alais(table_alais, column):
     check_alais = column.split('.')
+    column = filter_built_in_functions_from_column(column)
 
-    if len(check_alais) == 1 and not column.isdigit() and column != "" and column.lower() != "int" and column.lower() != "varchar":
-        column = table_alais + "." + column
+    if not column.upper() == 'INT' and not column.strip().lower().startswith("right 00") and not column.strip().lower().startswith('datepart'):
+        if len(check_alais) == 1 and not table_alais == '' and not column.isdigit() and column != "" and column.lower() != "count *" and column.lower() != "varchar":
+            column = table_alais + "." + column
     return column 
 
 def split_columns(select_clause):
@@ -374,14 +377,14 @@ def ensure_unique_values(data_dict):
                         value = value.replace("=", '')
                         value = value.replace("'", "")
                         value = value.strip()
-                        if not value.isdigit() and value and not value.lower() == "count *" and not value.lower() == "and" and not value.isdigit() and value.strip() and value != "''" and value != "':'" and value != ":" and value != 'as' and value not in seen:
+                        if not value.isdigit() and not value.strip().startswith("right 00") and not value.lower() == 'varchar' and not value.strip().lower().startswith('datepart') and value and not value.lower() == "count *" and not value.lower() == "and" and not value.isdigit() and value.strip() and value != "''" and value != "':'" and value != ":" and value != 'as' and value != 'int' and value not in seen:
                             seen.add(value)
                             unique_ordered_values.append(value)
                 else:
                     value = value.replace("=", "")
                     value = value.replace("'", "")
                     value = value.strip()
-                    if not value.isdigit() and value and not value.lower() == "count *" and not value.lower() == "and" and not value.isdigit() and value.strip() and value != "''" and value != "':'" and value != ":" and value != 'as' and value not in seen:
+                    if not value.isdigit() and not value.strip().startswith("right 00") and not value.lower() == 'varchar' and not value.strip().lower().startswith('datepart') and value and not value.lower() == "count *" and not value.lower() == "and" and not value.isdigit() and value.strip() and value != "''" and value != "':'" and value != ":" and value != 'as'and value != 'int' and value not in seen:
                         seen.add(value) 
                         unique_ordered_values.append(value)          
             data_dict[table][key] = unique_ordered_values
@@ -575,10 +578,9 @@ def extract_table_column_names_with_sub_pat(sql_query):
             split_queries = re.split(r'\bUNION\s+ALL\b|\bUNION\b', subquery, flags=re.IGNORECASE)
             if split_queries:
                 for query in split_queries:
-                    if fnc.is_table_name_present(query):
-                        no_invaild_join_query = remove_invalid_joins(query)
-                        column_map1 = extract_table_column_names(no_invaild_join_query)
-                        temp_column_map.append(column_map1)     
+                    no_invaild_join_query = remove_invalid_joins(query)
+                    column_map1 = extract_table_column_names(no_invaild_join_query, query_pattern= 'sub_query')
+                    temp_column_map.append(column_map1)     
 
     if temp_column_map:
         temp_column_map.append(column_map)

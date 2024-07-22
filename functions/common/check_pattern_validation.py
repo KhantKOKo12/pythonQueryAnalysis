@@ -35,11 +35,15 @@ def validate_sql_pattern(query):
     # Check for exactly one occurrence of SELECT/select (case-insensitive)
     select_pattern = re.compile(r'\bselect\b', re.IGNORECASE)
     select_matches = select_pattern.findall(query)
-
+    
+    join_pattern = re.compile(r'\bjoin\b', re.IGNORECASE)
+    join_matches = join_pattern.findall(query)
     # Validate conditions
     query_pattern = ''
-    if len(select_matches) == 1:
+    if len(select_matches) == 1 and len(join_matches) == 0:
         query_pattern = 'simple select'
+    elif len(select_matches) == 1 and len(join_matches) != 0:
+        query_pattern = 'simple join'    
     elif len(select_matches) > 1:
         query_pattern = 'subquery select'
     else:

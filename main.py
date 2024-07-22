@@ -97,8 +97,9 @@ def process_file(file_path):
                     if is_select:
                         query_pattern = fnc.validate_sql_pattern(sql_query)
                         if query_pattern == 'simple select':
-                            column_map = fnc.extract_table_column_names(sql_query)
-                            
+                            column_map = fnc.extract_table_column_names(sql_query, query_pattern)  
+                        elif query_pattern == 'simple join':
+                            column_map = fnc.extract_table_column_names(sql_query, query_pattern)
                         elif query_pattern == 'subquery select':
                             column_map = fnc.extract_table_column_names_with_sub_pat(sql_query)
 

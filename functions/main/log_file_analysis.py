@@ -25,7 +25,7 @@ if not os.path.exists(rootTempDir):
 
 # Open the log file
 
-column_map = defaultdict(list)
+column_map1  = defaultdict(list)
 column_map2 = defaultdict(list)
 file_name = []
 
@@ -108,15 +108,15 @@ def extract_table_names(section_content, folder_path, view_tables = []):
                 if write_table_name.lower() in view_tables:
                     table_folder_path = rootTempDir
                     full_remove_str = ' '.join(split_strings[:-1]) + '.'
-                    full_temp_name = sp_name.replace(full_remove_str , '')
+                    full_temp_name  = sp_name.replace(full_remove_str , '')
                     split_table_name[index] = full_temp_name
 
                 result_file_path = os.path.join(table_folder_path, f"{write_table_name.lower()}.txt")
                 if not os.path.exists(result_file_path):
                     logger = setup_logger(table_folder_path,write_table_name.lower() )
-    
+
     if match_column:
-        split_name = ''
+        split_name  = ''
         column_name = match_column.group(1)
 
         if ',' in column_name:
@@ -124,12 +124,11 @@ def extract_table_names(section_content, folder_path, view_tables = []):
             for sp_name in split_name:
                 sp_name = sp_name.replace("[", "")
                 sp_name = sp_name.replace("]", "")
-
                 extract_column_names(sp_name, split_table_name, target_view_table_name)     
         else:
             extract_column_names(column_name, split_table_name, target_view_table_name)
-                             
-    return column_map
+
+    # return column_map1
 
 def concat_column(input_string):
     table_name = ""
@@ -182,13 +181,13 @@ def extract_column_names(sp_name, split_table_name, target_view_table_name):
             if output_table:
                  # for table_name As table_alais   
                 for output_table_name, table_alias in output_table:
-                    if col_alias == table_alias and col_name not in column_map[output_table_name]:
-                        column_map[output_table_name].append(col_name)
+                    if col_alias == table_alias and col_name not in column_map1[output_table_name]:
+                        column_map1[output_table_name].append(col_name)
             else:
                 #  for table_name.col
-                if col_alias.lower() == target_table_name.lower() and col_name not in column_map[target_table_name]:
+                if col_alias.lower() == target_table_name.lower() and col_name not in column_map1[target_table_name]:
                            
-                    column_map[target_table_name].append(col_name)
+                    column_map1[target_table_name].append(col_name)
             
     else:    
         for table_name in split_table_name:
@@ -204,8 +203,8 @@ def extract_column_names(sp_name, split_table_name, target_view_table_name):
                     if target_view_table_name != '':
                         target_table_name = target_view_table_name + '.' + table_name
                
-            if sp_name not in column_map[target_table_name]:
-                column_map[target_table_name].append(sp_name)  
+            if sp_name not in column_map1[target_table_name]:
+                column_map1[target_table_name].append(sp_name)  
 
             
 def column_append(rootDir, value, target_log ,view_tables):
@@ -230,7 +229,7 @@ def column_append(rootDir, value, target_log ,view_tables):
                     if view_tables != []:
                         fixed_col = fixed_col.replace("*", "")
                         
-                    if fixed_col not in exiting_data and fixed_col not in exiting_data2 and fixed_col != '':
+                    if fixed_col not in exiting_data and fixed_col not in exiting_data2 and fixed_col != '' and fixed_col != 'varchar':
                         exiting_data2.append(fixed_col)
                         file.write(fixed_col + '\n')
 
@@ -314,6 +313,10 @@ def create_file_and_append_coumns_for_views():
 
 def start_run(file_path, rootDir2, folder_path, view_tables = []):
     try:
+        if len(view_tables) != 0:
+            global column_map1 
+            column_map1  = defaultdict(list) 
+
         file_path = Path(file_path)
 
         with file_path.open('r', encoding='utf-8') as file:
@@ -323,18 +326,18 @@ def start_run(file_path, rootDir2, folder_path, view_tables = []):
             # Split the content by the delimiter
             sections = file_content.split('===================================')
             # Process each section
-            column_map = {}
             for section in sections:
                 section_content = section.strip()
                 if section_content:  # Ensure the section is not empty
-                    column_map = extract_table_names(section_content, folder_path, view_tables)
+                    extract_table_names(section_content, folder_path, view_tables)
 
-            for key,value in column_map.items(): 
+            for key,value in column_map1.items():
                 table_name = key.lower().replace('.', '\\')  
                 target_log = f"{table_name}.txt".lower()
                 view_table_name = key.split('.')
-                
+                        
                 if view_table_name[-1].lower() in view_tables:
+                    target_log = f"{view_table_name[-1]}.txt".lower()
                     column_append(rootTempDir, value, target_log, view_tables )
                 elif key.lower() in view_tables:
                     column_append(rootTempDir, value, target_log, view_tables)
