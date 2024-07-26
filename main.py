@@ -80,7 +80,6 @@ def process_file(file_path):
             matches = view_query_pattern.findall(uncommented_contents)  # Find <cfquery> tags
             square_brackets_regex = r"\[([^\]]+)\]"
             if matches:
-                file_path_list = []
                 file_name.append(file_path.name)
 
                 query_analysis_logger.info(file_path)

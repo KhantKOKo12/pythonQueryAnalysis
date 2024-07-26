@@ -78,9 +78,9 @@ def scan_process_file(file_path):
             matches = cfquery_pattern.findall(uncommented_contents)  # Find <cfquery> tags
             
             if matches:
-                file_path_list = []
                 file_name.append(file_path.name)
                 query_analysis_logger.info(file_path)
+                
                 for match in matches:
                     #Remove <cfquery> tags from query
                     sql_regex = re.compile(r'<cfquery.*?>(.*?)</cfquery>', re.DOTALL)
